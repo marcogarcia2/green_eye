@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 
 class ConfiguracoesPage extends StatefulWidget {
@@ -56,25 +57,31 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
     );
   }
 
-  Widget _buildPerfilTab() => SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const CircleAvatar(radius: 50, child: Icon(Icons.person, size: 50)),
-            const SizedBox(height: 16),
-            Text('Usuário', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text('usuario@exemplo.com', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600])),
-            const SizedBox(height: 32),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Sair da Conta', style: TextStyle(color: Colors.red)),
-              onTap: () => _logout(context),
-            ),
-          ],
-        ),
-      );
+  Widget _buildPerfilTab() {
+    final user = FirebaseAuth.instance.currentUser;
+    final email = user?.email ?? 'usuario@exemplo.com';
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const CircleAvatar(radius: 50, child: Icon(Icons.person, size: 50)),
+          const SizedBox(height: 16),
+          Text('Usuário', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(email, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600])),
+          const SizedBox(height: 32),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Sair da Conta', style: TextStyle(color: Colors.red)),
+            onTap: () => _logout(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+
 
   Widget _buildSistemaTab() => ListView(
         padding: const EdgeInsets.all(16),

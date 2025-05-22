@@ -1,24 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../main.dart';
 
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({Key? key}) : super(key: key);
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
   bool _loading = false;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _senhaController = TextEditingController();
 
   Future<void> _login(BuildContext context) async {
     if (_loading) return;
     setState(() => _loading = true);
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final email = _emailController.text.trim();
+      final senha = _senhaController.text;
+      await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: senha);
       if (context.mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String msg = 'Erro ao fazer login';
+      if (e.code == 'user-not-found') {
+        msg = 'Usuário não encontrado';
+      } else if (e.code == 'wrong-password') {
+        msg = 'Senha incorreta';
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), duration: const Duration(seconds: 3)),
         );
       }
     } catch (e) {
@@ -71,6 +89,74 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 12),
                   const Text('Monitoramento Inteligente de Estufas', style: TextStyle(fontSize: 16, color: Colors.white, letterSpacing: 0.5)),
                   const SizedBox(height: 60),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      style: const TextStyle(fontSize: 16),
+                      decoration: InputDecoration(
+                        hintText: 'E-mail',
+                        prefixIcon: const Icon(Icons.email, color: Colors.green),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: Colors.green, width: 1.2),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: Colors.green, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.95),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _senhaController,
+                      obscureText: true,
+                      style: const TextStyle(fontSize: 16),
+                      decoration: InputDecoration(
+                        hintText: 'Senha',
+                        prefixIcon: const Icon(Icons.lock, color: Colors.green),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: Colors.green, width: 1.2),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: Colors.green, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.95),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
                   Material(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
@@ -89,7 +175,7 @@ class _LoginPageState extends State<LoginPage> {
                             : Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.login, color: Colors.green, size: 24),
+                                  Icon(Icons.login, color: Colors.green.shade700, size: 24),
                                   const SizedBox(width: 12),
                                   const Text('Entrar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF424242))),
                                 ],
