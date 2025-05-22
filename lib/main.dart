@@ -6,6 +6,7 @@ import 'screens/configuracoes_page.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:greeneye/firebase_config.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 
 void main() async {
@@ -15,8 +16,9 @@ void main() async {
   runApp(const GreenEyeApp());
 }
 
+
 class GreenEyeApp extends StatelessWidget {
-  const GreenEyeApp({super.key});
+  const GreenEyeApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -50,8 +52,17 @@ class GreenEyeApp extends StatelessWidget {
           foregroundColor: Colors.white,
         ),
       ),
-      home: const LoginPage(),
+      home: _getInitialScreen(),
     );
+  }
+
+  Widget _getInitialScreen() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      return const HomePage();
+    } else {
+      return const LoginPage();
+    }
   }
 }
 
