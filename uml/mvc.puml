@@ -1,0 +1,52 @@
+@startuml diagrama mvc
+!theme mars
+allowmixing
+
+title Arquitetura MVC - Aplicativo Green Eye
+
+package "Aplicativo Mobile Green Eye" {
+
+  package "View" {
+    class HomeScreen as "Home Screen\n(Visão Geral Estufas)"
+    class GreenhouseDetailScreen as "Tela Individual Estufa\n(Gráficos, Filtros, Exportar)"
+  }
+
+  package "Controller" {
+    class AppController as "AppController\n(Gerencia Dados de Estufas, Filtros, Exportação)"
+  }
+
+  package "Model" {
+    class DataModel as "DataModel\n(Estufas, Leituras)"
+    class FirebaseService as "FirebaseService\n(Acesso ao Firebase)"
+  }
+
+  ' ---- Relacionamentos Essenciais entre View e Controller ----
+  HomeScreen ..> AppController : <<interage>>
+  GreenhouseDetailScreen ..> AppController : <<interage>>
+  AppController ..> HomeScreen : <<atualiza UI>>
+  AppController ..> GreenhouseDetailScreen : <<atualiza UI>>
+
+  ' ---- Relacionamentos Essenciais entre Controller e Model ----
+  AppController --> DataModel : <<solicita/envia dados>>
+  AppController --> FirebaseService : <<solicita acesso>>
+
+  ' ---- Relacionamentos dentro do Model ----
+  DataModel -- FirebaseService : <<persiste/obtém>>
+
+} 
+' Fim do pacote "Aplicativo Mobile Green Eye"
+
+' ---- Interação do Model com componentes externos ----
+cloud "Google Firebase" as FirebaseCloud
+database "Firebase\nFirestore/RTDB" as FirebaseDB
+
+FirebaseService -- FirebaseCloud : <<acessa serviços>>
+FirebaseCloud -- FirebaseDB : <<persiste/obtém dados>>
+
+node "Circuito Físico (ESP32)" as ESP32 {
+  artifact "Firmware C" as FirmwareC
+}
+
+ESP32 --> FirebaseDB : <<envia dados>>
+
+@enduml
