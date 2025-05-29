@@ -15,14 +15,14 @@ void setup(){
 
   Serial.begin(115200);
   connectWiFi();
-  blueLed(true);
+  blueLED(true);
 
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
 
   Serial.println();
-  Serial.print(Firebase.getString("/Estufa\ 01/name"));
+  Serial.print(Firebase.getString("/Estufa_teste/name"));
   Serial.println();
-  blueLed(false);
+  blueLED(false);
 }
 
 
