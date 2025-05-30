@@ -1,6 +1,8 @@
 #include <WiFi.h>
 #include <IOXhop_FirebaseESP32.h>
 #include <ArduinoJson.h>
+#include <time.h>
+#include <string.h>
 
 #include "secret.h"
 
