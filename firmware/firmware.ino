@@ -37,22 +37,75 @@ void loop(){
 
   // Escrever os dados:
   connectWiFi();
-  /// Descobrir que dia é hoje
-  /// Descobrir que horas são (hora que começou) (talvez usar variavel estatica)
 
+  configTime(-3 * 3600, 0, "pool.ntp.org"); // Configura NTP com fuso horário de Brasília (-3 horas)
+
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Erro ao obter horário. Reiniciando o sistema...");
+    // deepSleep(5); // Dorme por 10 segundos para tentar novamente
+  }
+
+  // Descobrindo o horário atual
+  int currentTime = timeinfo.tm_hour * 3600 + timeinfo.tm_min * 60; // + timeinfo.tm_sec;
+  char timeBuffer[10] = strcpy(getTimeString(curentTime));
+
+  /// Descobrir que dia é hoje
+  char dateBuffer[15];
+  strcpy(dateBuffer, getDate());
+
+  /// Descobrir que horas são (hora que começou) (talvez usar variavel estatica) 
+  
   blueLED(true);
   // Conectar com o banco de dados
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+
+  Estufa_id + dia de hoje + tipo + horario = dado
+  char base_path[70] = "/";
+  strcat(base_path, ESTUFA_ID);
+  strcat(base_path, "/");
+  strcat(base_path, dateBuffer);
+  strcat(base_path, "/");
+
+  char path[70];
+  Serial.println(base_path);
+
+  for (int i = 0; i < 4; i++){
+    strcpy(path, base_path);
+    switch(i){
+      case 0: 
+        strcat(path, "hum/");
+        strcat(path, timeBuffer);
+        Firebase.setFloat(path, data.humidity);
+        break;
+      
+      case 1:
+        strcat(path, "lum/");
+        strcat(path, timeBuffer);
+        Firebase.setInt(path, data.luminosity);
+        break;
+
+      case 2:
+        strcat(path, "moist/");
+        strcat(path, timeBuffer);
+        Firebase.setInt(path, data.soilMoisture);
+        break;
+
+      case 3:
+        strcat(path, "temp/");
+        strcat(path, timeBuffer);
+        Firebase.setFloat(path, data.temperature);
+        break;
+    }
+
+  }
+
+
   Serial.println(Firebase.getString("/Estufa_teste/name"));
   Serial.println(Firebase.getFloat("/Estufa_teste/2025-05-29/temp/14:00"));
   Serial.println(Firebase.getFloat("/Estufa_teste/2025-05-29/hum/14:00"));
   Serial.println(Firebase.getInt("/Estufa_teste/2025-05-29/lum/14:00"));
   Serial.println(Firebase.getInt("/Estufa_teste/2025-05-29/moist/14:00"));
-  // Escrever dados
-  Firebase.setFloat("/Estufa_teste/2025-05-29/temp/14:00", data.temperature);
-  Firebase.setFloat("/Estufa_teste/2025-05-29/hum/14:00", data.humidity);
-  Firebase.setInt("/Estufa_teste/2025-05-29/lum/14:00", data.luminosity);
-  Firebase.setInt("/Estufa_teste/2025-05-29/moist/14:00", data.soilMoisture);
+  
 
   
   

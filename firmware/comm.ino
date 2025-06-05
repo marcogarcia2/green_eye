@@ -19,7 +19,7 @@ bool connectWiFi() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
     // Conexão no eduroam
-    // WiFi.begin(ssid, WPA2_AUTH_PEAP, EAP_IDENTITY, EAP_USERNAME, EAP_PASSWORD); // Para redes como eduroam
+    // WiFi.begin(WIFI_PASSWORD, WPA2_AUTH_PEAP, EAP_IDENTITY, EAP_USERNAME, EAP_PASSWORD); // Para redes como eduroam
     
     Serial.print("Conectando ao WiFi");
     
@@ -63,6 +63,27 @@ bool connectWiFi() {
   return false;
 }
 
+// Função que obtém a data de hoje no formato "YYYY-MM-DD"
+char* getDate() {
+  struct tm timeinfo;
+
+  // Atualiza as informações de tempo local
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Erro ao obter o horário local!");
+    return nullptr; // Retorna null em caso de erro
+  }
+
+  // Aloca memória para armazenar a data
+  static char date[11]; // "YYYY-MM-DD" + null terminator
+
+  // Formata a data como "YYYY-MM-DD"
+  snprintf(date, sizeof(date), "%04d-%02d-%02d", 
+           timeinfo.tm_year + 1900, // Ano desde 1900
+           timeinfo.tm_mon + 1,     // Mês (0 a 11, por isso adicionamos 1)
+           timeinfo.tm_mday);       // Dia do mês
+
+  return date; // Retorna o ponteiro para a string formatada
+}
 
 // Função que tenta se reconectar ao wifi, somente caso esse tenha caído.
 void reconnectWiFi(){

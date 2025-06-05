@@ -49,4 +49,19 @@ SensorData readSensors(int samples = 10) {
   return data;
 }
 
+// Função que obtém o horário no formato "HH:MM" dado o número de segundos
+char* getTimeString(int timeInSeconds) {
+  // Calcula horas e minutos
+  int hours = timeInSeconds / 3600;
+  int minutes = (timeInSeconds % 3600) / 60;
+
+  // Aloca memória para a string do tempo no formato "hh:mm"
+  char* newTime = new char[6]; // "hh:mm" + null terminator
+  
+  // Formata o tempo como "hh:mm"
+  snprintf(newTime, 6, "%02d:%02d", hours, minutes);
+
+  return newTime;
+}
+
 #endif
