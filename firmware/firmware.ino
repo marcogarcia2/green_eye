@@ -2,7 +2,7 @@
 #include <IOXhop_FirebaseESP32.h>
 #include <ArduinoJson.h>
 
-#include "functions.h"
+#include "sensors.h"
 #include "secret.h"
 
 //
