@@ -5,6 +5,9 @@
 #include "functions.h"
 #include "secret.h"
 
+//
+tm timeinfo;
+
 // Função que liga ou desliga o LED Azul
 void blueLED(bool status){
   pinMode(2, OUTPUT);
@@ -47,7 +50,8 @@ void loop(){
 
   // Descobrindo o horário atual
   int currentTime = timeinfo.tm_hour * 3600 + timeinfo.tm_min * 60; // + timeinfo.tm_sec;
-  char timeBuffer[10] = strcpy(getTimeString(curentTime));
+  char timeBuffer[10];
+  strcpy(timeBuffer, getTimeString(currentTime));
 
   /// Descobrir que dia é hoje
   char dateBuffer[15];
@@ -59,7 +63,6 @@ void loop(){
   // Conectar com o banco de dados
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
 
-  Estufa_id + dia de hoje + tipo + horario = dado
   char base_path[70] = "/";
   strcat(base_path, ESTUFA_ID);
   strcat(base_path, "/");
