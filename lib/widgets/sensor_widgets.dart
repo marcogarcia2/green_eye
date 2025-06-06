@@ -10,6 +10,7 @@ class SensorDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     final icon = SensorUtils.getIconData(sensor.key);
     final unidade = SensorUtils.getUnidade(sensor.key);
+    final isSemDado = sensor.value == 0.0;
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -26,10 +27,12 @@ class SensorDisplay extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(sensor.key, style: const TextStyle(fontSize: 12, color: Color(0xFF424242))),
-              Text(
-                '${sensor.value}$unidade',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green),
-              ),
+              isSemDado
+                  ? const Text('Sem dados', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 13))
+                  : Text(
+                      '${sensor.value}$unidade',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green),
+                    ),
             ],
           ),
         ],
