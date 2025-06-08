@@ -28,12 +28,17 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: Colors.green,
           title: Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: const [
               Icon(Icons.eco, size: 28),
               SizedBox(width: 8),
-              Text('GreenEye', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1)),
+              Text(
+                'GreenEye',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1),
+              ),
             ],
           ),
           centerTitle: true,
@@ -41,12 +46,12 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
         body: Column(
           children: [
             Container(
-              color: Colors.green,
+              color: Colors.white,
               child: const TabBar(
                 tabs: [Tab(text: 'Perfil'), Tab(text: 'Sistema')],
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                indicatorColor: Colors.white,
+                labelColor: Colors.green,
+                unselectedLabelColor: Colors.black54,
+                indicatorColor: Colors.green,
               ),
             ),
             Expanded(

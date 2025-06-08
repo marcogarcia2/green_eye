@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../models/estufa_card.dart';
 import '../widgets/sensor_widgets.dart';
+import '../firebase_realtime_service.dart';
+import '../utils/sensor_utils.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/estufa_storage.dart';
 
 
 class EstufasPage extends StatefulWidget {
@@ -10,33 +16,31 @@ class EstufasPage extends StatefulWidget {
 }
 
 class _EstufasPageState extends State<EstufasPage> {
-  final List<EstufaCard> estufas = [
-    const EstufaCard(
-      id: '001',
-      nome: 'Estufa 1',
-      sensores: {
-        'Temperatura': 25.5,
-        'Umidade do Ar': 65.0,
-        'Umidade do Solo': 80.0,
-        'Luminosidade': 500,
-      },
-      historico: {
-        'Temperatura': [24.0, 24.5, 25.0, 25.5],
-        'Umidade do Ar': [63.0, 64.0, 64.5, 65.0],
-        'Umidade do Solo': [78.0, 79.0, 79.5, 80.0],
-        'Luminosidade': [100, 89, 70, 65],
-      },
-    ),
-    const EstufaCard(
-      id: '002',
-      nome: 'Estufa 2',
-      sensores: {'Temperatura': 23.8, 'Umidade do Ar': 70.0},
-      historico: {
-        'Temperatura': [23.0, 23.2, 23.5, 23.8],
-        'Umidade do Ar': [68.0, 68.5, 69.0, 70.0],
-      },
-    ),
-  ];
+  final List<EstufaCard> estufas = [];
+  final FirebaseRealtimeService _firebaseService = FirebaseRealtimeService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEstufasLocal();
+  }
+
+  Future<void> _loadEstufasLocal() async {
+    final loaded = await EstufaStorage.loadEstufas();
+    if (loaded.isNotEmpty) {
+      setState(() {
+        estufas.clear();
+        estufas.addAll(loaded);
+      });
+    } else {
+      // Se não houver estufas salvas, pode carregar a padrão (opcional)
+      // await _loadEstufaPadrao();
+    }
+  }
+
+  Future<void> _saveEstufasLocal() async {
+    await EstufaStorage.saveEstufas(estufas);
+  }
 
   void _showAddEstufaDialog() {
     final idController = TextEditingController();
@@ -75,36 +79,70 @@ class _EstufasPageState extends State<EstufasPage> {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
-              if (idController.text.isNotEmpty && senhaController.text.isNotEmpty) {
-                setState(() {
-                  estufas.add(
-                    EstufaCard(
-                      id: idController.text,
-                      nome: 'Estufa ${estufas.length + 1}',
-                      sensores: {'Temperatura': 0.0, 'Umidade do Ar': 0.0},
-                      historico: {
-                        'Temperatura': [0.0],
-                        'Umidade do Ar': [0.0],
-                      },
-                    ),
-                  );
-                });
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Estufa adicionada com sucesso!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } else {
+            onPressed: () async {
+              final estufaId = idController.text.trim();
+              final senha = senhaController.text.trim();
+              if (estufaId.isEmpty || senha.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Por favor, preencha todos os campos'),
                     backgroundColor: Colors.red,
                   ),
                 );
+                return;
               }
+              // Verifica se já existe uma estufa com esse ID
+              final jaAdicionada = estufas.any((e) => e.id == estufaId);
+              if (jaAdicionada) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Esta estufa já foi adicionada!'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+              final isValid = await _firebaseService.checkPassword(estufaId, senha);
+              if (!isValid) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('ID ou senha incorretos!'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+              final latest = await _firebaseService.getLatestSensorValues(estufaId, today);
+              final nome = await _firebaseService.getEstufaName(estufaId) ?? estufaId;
+              setState(() {
+                estufas.add(
+                  EstufaCard(
+                    id: estufaId,
+                    nome: nome,
+                    sensores: {
+                      'Temperatura': latest['temp'] ?? 0.0,
+                      'Umidade do Ar': latest['hum'] ?? 0.0,
+                      'Umidade do Solo': latest['moist'] ?? 0.0,
+                      'Luminosidade': latest['lum'] ?? 0.0,
+                    },
+                    historico: {
+                      'Temperatura': [latest['temp'] ?? 0.0],
+                      'Umidade do Ar': [latest['hum'] ?? 0.0],
+                      'Umidade do Solo': [latest['moist'] ?? 0.0],
+                      'Luminosidade': [latest['lum'] ?? 0.0],
+                    },
+                  ),
+                );
+              });
+              await _saveEstufasLocal();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Estufa adicionada com sucesso!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
             },
             child: const Text('Adicionar'),
           ),
@@ -119,13 +157,31 @@ class _EstufasPageState extends State<EstufasPage> {
       appBar: AppBar(
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.eco, size: 28),
-            SizedBox(width: 8),
-            Text('GreenEye', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1)),
+          children: [
+            if (estufas.isNotEmpty) const SizedBox(width: 48), // Compensa o espaço do botão de recarregar
+            const Icon(Icons.eco, size: 28),
+            const SizedBox(width: 8),
+            const Text('GreenEye', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1)),
           ],
         ),
         centerTitle: true,
+        actions: estufas.isNotEmpty
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Recarregar',
+                  onPressed: () async {
+                    await _loadEstufasLocal();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Dados recarregados!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  },
+                ),
+              ]
+            : null,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddEstufaDialog,
@@ -133,42 +189,116 @@ class _EstufasPageState extends State<EstufasPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: ListView.builder(
-          itemCount: estufas.length,
-          itemBuilder: (context, index) {
-            final estufa = estufas[index];
-            return InkWell(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => EstufaDetalhesPage(estufa: estufa)),
-              ),
-              child: Card(
-                elevation: 2,
-                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(estufa.nome, style: Theme.of(context).textTheme.titleLarge),
-                          Text('ID: ${estufa.id}', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600])),
-                        ],
-                      ),
-                      const Divider(),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: estufa.sensores.entries.map((sensor) => SensorDisplay(sensor: sensor)).toList(),
-                      ),
-                    ],
-                  ),
+        child: estufas.isEmpty
+            ? Center(
+                child: Text(
+                  'Nenhuma estufa adicionada ainda.',
+                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
                 ),
+              )
+            : ListView.builder(
+                itemCount: estufas.length,
+                itemBuilder: (context, index) {
+                  final estufa = estufas[index];
+                  return Dismissible(
+                    key: Key(estufa.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: const Icon(Icons.delete_forever, color: Colors.red, size: 36),
+                    ),
+                    confirmDismiss: (direction) async {
+                      return await showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          title: Column(
+                            children: const [
+                              Icon(Icons.warning_amber_rounded, color: Colors.red, size: 40),
+                              SizedBox(height: 12),
+                              Text('Remover Estufa', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          content: Text(
+                            'Tem certeza que deseja remover a estufa "${estufa.nome}"? Esta ação não pode ser desfeita.',
+                            textAlign: TextAlign.center,
+                          ),
+                          actionsAlignment: MainAxisAlignment.center,
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.grey[700],
+                                textStyle: const TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                              child: const Text('Cancelar'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                elevation: 0,
+                              ),
+                              child: const Text('Remover'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    onDismissed: (direction) async {
+                      final messenger = ScaffoldMessenger.of(context); // Salve antes do setState
+                      setState(() {
+                        estufas.removeAt(index);
+                      });
+                      await _saveEstufasLocal();
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text('Estufa removida!'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    },
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => EstufaDetalhesPage(estufa: estufa)),
+                      ),
+                      child: Card(
+                        elevation: 2,
+                        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(estufa.nome, style: Theme.of(context).textTheme.titleLarge),
+                                  Text('ID: ${estufa.id}', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600])),
+                                ],
+                              ),
+                              const Divider(),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: estufa.sensores.entries.map((sensor) => SensorDisplay(sensor: sensor)).toList(),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
       ),
     );
   }
@@ -204,6 +334,135 @@ class _EstufaDetalhesPageState extends State<EstufaDetalhesPage> with SingleTick
     super.dispose();
   }
 
+  Widget _buildMedicoesTab() {
+    return FutureBuilder<Map<String, Map<String, Map<String, double>>>>(
+      future: FirebaseRealtimeService().getAllMedicoes(widget.estufa.id),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final medicoes = snapshot.data ?? {};
+        if (medicoes.isEmpty) {
+          return const Center(child: Text('Nenhuma medição encontrada.'));
+        }
+        final datas = medicoes.keys.toList()..sort((a, b) => b.compareTo(a));
+        return ListView(
+          padding: const EdgeInsets.all(8),
+          children: [
+            ...datas.map((data) {
+              final sensores = medicoes[data]!;
+              final sensoresKeys = sensores.keys.toList()..sort();
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    tilePadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+                    childrenPadding: const EdgeInsets.only(bottom: 8, left: 8, right: 8),
+                    title: Text(
+                      data,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFF424242)),
+                    ),
+                    children: [
+                      ...sensoresKeys.map((sensorKey) {
+                        final horariosMap = sensores[sensorKey] ?? {};
+                        if (horariosMap.isEmpty) return const SizedBox.shrink();
+                        final horarios = horariosMap.keys.toList()..sort();
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+                          elevation: 0,
+                          color: Colors.grey[50],
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Theme(
+                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                              childrenPadding: const EdgeInsets.only(bottom: 4, left: 8, right: 8),
+                              title: Row(
+                                children: [
+                                  Icon(
+                                    SensorUtils.getIconData(_nomeSensorCompleto(sensorKey)),
+                                    color: Colors.green.shade400,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _nomeSensorCompleto(sensorKey),
+                                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14, color: Color(0xFF424242)),
+                                  ),
+                                ],
+                              ),
+                              children: horarios.isEmpty
+                                  ? [const Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Text('Sem medições para este sensor.', style: TextStyle(color: Colors.grey)),
+                                    )]
+                                  : horarios.map((horario) {
+                                      final valor = horariosMap[horario];
+                                      return ListTile(
+                                        dense: true,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                                        leading: Text(horario, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                                        title: Text(
+                                          valor == null
+                                              ? 'Sem dados'
+                                              : (valor == 0.0 ? 'Sem dados' : valor.toStringAsFixed(1) + _unidadeSensor(sensorKey)),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            color: (valor == null || valor == 0.0) ? Colors.grey : Colors.green[900],
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        );
+      },
+    );
+  }
+
+  String _nomeSensorCompleto(String key) {
+    switch (key) {
+      case 'temp':
+        return 'Temperatura';
+      case 'hum':
+        return 'Umidade do Ar';
+      case 'moist':
+        return 'Umidade do Solo';
+      case 'lum':
+        return 'Luminosidade';
+      default:
+        return key;
+    }
+  }
+
+  String _unidadeSensor(String key) {
+    switch (key) {
+      case 'temp':
+        return '°C';
+      case 'hum':
+      case 'moist':
+        return '%';
+      case 'lum':
+        return '';
+      default:
+        return '';
+    }
+  }
+
+  // _sensorMedicaoCompact removido pois não é mais utilizado
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -212,7 +471,7 @@ class _EstufaDetalhesPageState extends State<EstufaDetalhesPage> with SingleTick
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'Atual'),
+            Tab(text: 'Medições'),
             Tab(text: 'Histórico'),
             Tab(text: 'Alertas'),
           ],
@@ -224,7 +483,7 @@ class _EstufaDetalhesPageState extends State<EstufaDetalhesPage> with SingleTick
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildAtualTab(),
+          _buildMedicoesTab(),
           _buildHistoricoTab(),
           _buildAlertasTab(),
         ],
@@ -232,18 +491,6 @@ class _EstufaDetalhesPageState extends State<EstufaDetalhesPage> with SingleTick
     );
   }
 
-  Widget _buildAtualTab() => SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: widget.estufa.sensores.entries
-              .map((sensor) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: SensorDisplay(sensor: sensor),
-                  ))
-              .toList(),
-        ),
-      );
 
   Widget _buildHistoricoTab() => SingleChildScrollView(
         padding: const EdgeInsets.all(16),
