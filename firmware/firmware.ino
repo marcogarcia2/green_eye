@@ -4,6 +4,7 @@
 
 #include "sensors.h"
 #include "secret.h"
+#include "comm.h"
 
 #define NUM_SENSORS 4
 #define SLEEP_INTERVAL 15 * 60 * 1000000 // 15 minutos escritos em microssegundos
@@ -14,8 +15,10 @@ tm timeinfo;
 void setup(){
 
   Serial.begin(9600);
+  Serial.flush();
 
   // Coleta os dados dos sensores e armazena na struct "data"
+  Serial.println("\nESP32 ligada, vou coletar os dados...");
   initSensors();
   SensorData data = readSensors();
   printData(data);
@@ -33,7 +36,6 @@ void setup(){
   blueLED(true);
 
   // Calculando o horário atual (para formar a chave do item no BD)
-  char timeBuffer[10];
   int hh = timeinfo.tm_hour;
   int mm = timeinfo.tm_min;
   while (mm % 15 != 0) mm--;
@@ -57,8 +59,9 @@ void setup(){
 
 
   // Conectar com o banco de dados
-  reconnectWifi();  // garante conexão com a internet
+  reconnectWiFi();  // garante conexão com a internet
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Serial.println("Inserindo os dados no BD...");
 
   // Loop de escrita das amostras coletadas
   for (int i = 0; i < NUM_SENSORS; i++){
@@ -92,7 +95,7 @@ void setup(){
         Firebase.setFloat(path, data.temperature);
         break;
       
-      case default: 
+      default: 
         break;
     }
 
@@ -117,9 +120,8 @@ void setup(){
   // Cálculo da quantidade de segundos que a ESP deve dormir
   int calculated_sleep_time = target_time - current_time;
 
-  // Desliga o LED e garante os prints seriais
+  // Desliga o LED
   blueLED(false);
-  Serial.flush();
 
   // Faz a ESP dormir até o próximo horário de operação
   deepSleep(calculated_sleep_time);
@@ -127,8 +129,8 @@ void setup(){
 
 
 void loop(){
-  // Usado para debug
-  SensorData new_data = readSensors();
-  printData(new_data);
-  delay(1000);
+//  // Usado para debug
+//  SensorData new_data = readSensors();
+//  printData(new_data);
+//  delay(1000);
 }

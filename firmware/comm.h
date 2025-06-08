@@ -16,10 +16,10 @@ bool connectWiFi() {
   for (int attempts = 0; attempts < MAX_ATTEMPTS; attempts++){
 
     // Conexão em WiFi tradicional
-    //WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
     // Conexão no eduroam
-    WiFi.begin(WIFI_SSID, WPA2_AUTH_PEAP, EAP_IDENTITY, EAP_USERNAME, EAP_PASSWORD); // Para redes como eduroam
+//    WiFi.begin(WIFI_SSID, WPA2_AUTH_PEAP, EAP_IDENTITY, EAP_USERNAME, EAP_PASSWORD); // Para redes como eduroam
     
     Serial.print("Conectando ao WiFi");
     
