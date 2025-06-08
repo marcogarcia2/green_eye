@@ -5,75 +5,68 @@
 #include "functions.h"
 #include "secret.h"
 
-//
-tm timeinfo;
+#define NUM_SENSORS 4
+#define SLEEP_INTERVAL 15 * 60 * 1000000 // 15 minutos escritos em microssegundos
 
-// Função que liga ou desliga o LED Azul
-void blueLED(bool status){
-  pinMode(2, OUTPUT);
-  if (status) digitalWrite(2, HIGH);
-  else digitalWrite(2, LOW);
-}
+// Variável global que irá armazenar o tempo
+tm timeinfo;
 
 void setup(){
 
   Serial.begin(9600);
+
+  // Coleta os dados dos sensores e armazena na struct "data"
   initSensors();
-
-
-}
-
-
-void loop(){
-
-
   SensorData data = readSensors();
-  
-  Serial.print("Temperature = ");
-  Serial.println(data.temperature);
-  Serial.print("Humidity = ");
-  Serial.println(data.humidity);
-  Serial.print("Luminosity = ");
-  Serial.println(data.luminosity);
-  Serial.print("Soil Moisture = ");
-  Serial.println(data.soilMoisture);
+  printData(data);
 
-  // Escrever os dados:
+  // Conecta-se à internet para poder escrever os dados
   connectWiFi();
-
   configTime(-3 * 3600, 0, "pool.ntp.org"); // Configura NTP com fuso horário de Brasília (-3 horas)
-
   if (!getLocalTime(&timeinfo)) {
     Serial.println("Erro ao obter horário. Reiniciando o sistema...");
-    // deepSleep(5); // Dorme por 10 segundos para tentar novamente
+    // restartSystem();
+    ESP.restart();
   }
 
-  // Descobrindo o horário atual
-  int currentTime = timeinfo.tm_hour * 3600 + timeinfo.tm_min * 60; // + timeinfo.tm_sec;
-  char timeBuffer[10];
-  strcpy(timeBuffer, getTimeString(currentTime));
+  // Sinaliza que se conectou à internet
+  blueLED(true);
 
-  /// Descobrir que dia é hoje
-  char dateBuffer[15];
+  // Calculando o horário atual (para formar a chave do item no BD)
+  char timeBuffer[10];
+  int hh = timeinfo.tm_hour;
+  int mm = timeinfo.tm_min;
+  while (mm % 15 != 0) mm--;
+
+  // Forma a chave no formato HH:MM
+  char timeBuffer[6];
+  snprintf(timeBuffer, 6, "%02d:%02d", hh, mm);
+
+  // Descobrir que dia é hoje
+  char dateBuffer[11];
   strcpy(dateBuffer, getDate());
 
-  /// Descobrir que horas são (hora que começou) (talvez usar variavel estatica) 
-  
-  blueLED(true);
-  // Conectar com o banco de dados
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
-
-  char base_path[70] = "/";
+  // Agora é preciso começar a construir os paths de cada dado
+  char path[70];                  // path em que o item será guardado
+  char base_path[70] = "/";       // path base, constante em cada iteração
   strcat(base_path, ESTUFA_ID);
   strcat(base_path, "/");
   strcat(base_path, dateBuffer);
   strcat(base_path, "/");
+  // Serial.println(base_path);
 
-  char path[70];
-  Serial.println(base_path);
 
-  for (int i = 0; i < 4; i++){
+  // Conectar com o banco de dados
+  reconnectWifi();  // garante conexão com a internet
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+
+  // Loop de escrita das amostras coletadas
+  for (int i = 0; i < NUM_SENSORS; i++){
+    
+    // Reinicia o path com o base_path
     strcpy(path, base_path);
+    
+    // Insere os dados coletados no BD, corrigindo o path
     switch(i){
       case 0: 
         strcat(path, "hum/");
@@ -98,26 +91,44 @@ void loop(){
         strcat(path, timeBuffer);
         Firebase.setFloat(path, data.temperature);
         break;
+      
+      case default: 
+        break;
     }
 
   }
 
+  // É necessário saber que horas são para calcular quanto ela deve dormir. 
+    if (!getLocalTime(&timeinfo)) {
+    Serial.println("Erro ao obter horário. Reiniciando o sistema...");
+    // restartSystem();
+    ESP.restart();
+  }
 
-  Serial.println(Firebase.getString("/Estufa_teste/name"));
-  Serial.println(Firebase.getFloat("/Estufa_teste/2025-05-29/temp/14:00"));
-  Serial.println(Firebase.getFloat("/Estufa_teste/2025-05-29/hum/14:00"));
-  Serial.println(Firebase.getInt("/Estufa_teste/2025-05-29/lum/14:00"));
-  Serial.println(Firebase.getInt("/Estufa_teste/2025-05-29/moist/14:00"));
+  // Hora do dia em segundos
+  int current_time = timeinfo.tm_hour * 3600 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
   
+  // Horário até qual deve dormir
+  int target_time = 0;
+  while (target_time < current_time){
+    target_time += 900; // (900 = 15*60) de 15 em 15 minutos
+  }
 
-  
-  
-  /// Criar função que escreve cada tipo de dado no dia e horário atual
+  // Cálculo da quantidade de segundos que a ESP deve dormir
+  int calculated_sleep_time = target_time - current_time;
+
+  // Desliga o LED e garante os prints seriais
   blueLED(false);
-  
-  // Calcular quanto deve-se dormir
-  /// Baseado no horário atual (Exato)
-  //deepSleep(tempo);
-  delay(1000);
+  Serial.flush();
 
+  // Faz a ESP dormir até o próximo horário de operação
+  deepSleep(calculated_sleep_time);
+}
+
+
+void loop(){
+  // Usado para debug
+  SensorData new_data = readSensors();
+  printData(new_data);
+  delay(1000);
 }

@@ -49,19 +49,55 @@ SensorData readSensors(int samples = 10) {
   return data;
 }
 
-// Função que obtém o horário no formato "HH:MM" dado o número de segundos
-char* getTimeString(int timeInSeconds) {
-  // Calcula horas e minutos
-  int hours = timeInSeconds / 3600;
-  int minutes = (timeInSeconds % 3600) / 60;
+// Função que exibe os dados coletados, um por linha
+void printData(SensorData data){
+  Serial.print("Temperature = ");
+  Serial.println(data.temperature);
+  Serial.print("Humidity = ");
+  Serial.println(data.humidity);
+  Serial.print("Luminosity = ");
+  Serial.println(data.luminosity);
+  Serial.print("Soil Moisture = ");
+  Serial.println(data.soilMoisture);
+}
 
-  // Aloca memória para a string do tempo no formato "hh:mm"
-  char* newTime = new char[6]; // "hh:mm" + null terminator
+// Função que liga ou desliga o LED Azul
+void blueLED(bool status){
+  pinMode(2, OUTPUT);
+  if (status) digitalWrite(2, HIGH);
+  else digitalWrite(2, LOW);
+}
+
+// Função para colocar ESP32 em deep sleep por um tempo determinado
+void deepSleep(int sleep_time){
+
+  // Serial.printf("Dormindo por %d segundos...\n", sleep_time);
+  esp_sleep_enable_timer_wakeup(sleep_time * 1000000LL);
+  esp_deep_sleep_start();
+  return;
+}
+
+
+// // Função que obtém o horário no formato "HH:MM" dado o número de segundos
+// char* getTimeString(int timeInSeconds) {
+//   // Calcula horas e minutos
+//   int hours = timeInSeconds / 3600;
+//   int minutes = (timeInSeconds % 3600) / 60;
+
+//   // Aloca memória para a string do tempo no formato "hh:mm"
+//   char* newTime = new char[6]; // "hh:mm" + null terminator
   
-  // Formata o tempo como "hh:mm"
-  snprintf(newTime, 6, "%02d:%02d", hours, minutes);
+//   // Formata o tempo como "hh:mm"
+//   snprintf(newTime, 6, "%02d:%02d", hours, minutes);
 
-  return newTime;
+//   return newTime;
+// }
+
+// Função que reinicia a ESP32
+restartSystem(){
+  blueLED(false);
+  Serial.flush();
+  deepSleep(1);
 }
 
 #endif
