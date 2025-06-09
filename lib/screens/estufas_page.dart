@@ -5,7 +5,9 @@ import '../widgets/sensor_widgets.dart';
 import '../firebase_realtime_service.dart';
 import '../utils/sensor_utils.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:fl_chart/fl_chart.dart';
 import '../utils/estufa_storage.dart';
 
 
@@ -492,31 +494,188 @@ class _EstufaDetalhesPageState extends State<EstufaDetalhesPage> with SingleTick
   }
 
 
-  Widget _buildHistoricoTab() => SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: widget.estufa.historico.entries.map((entry) {
-            final sensorKey = entry.key;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 24),
+  Widget _buildHistoricoTab() {
+    DateTime? _selectedDate;
+    return StatefulBuilder(
+      builder: (context, setState) {
+        _selectedDate ??= DateTime.now();
+        final String selectedDateStr = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+        return FutureBuilder<Map<String, Map<String, Map<String, double>>>> (
+          future: FirebaseRealtimeService().getAllMedicoes(widget.estufa.id),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final medicoes = snapshot.data ?? {};
+            final sensoresMap = medicoes[selectedDateStr] ?? {};
+            final sensoresKeys = sensoresMap.keys.toList()..sort();
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(sensorKey, style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 200,
-                    child: Center(
-                      child: Text('Aqui virá o gráfico de $sensorKey', style: const TextStyle(color: Colors.grey)),
-                    ),
+                  Row(
+                    children: [
+                      const Text('Selecione o dia:', style: TextStyle(fontWeight: FontWeight.w500)),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.calendar_today, size: 18),
+                        label: Text(DateFormat('dd/MM/yyyy').format(_selectedDate!)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade400,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _selectedDate!,
+                            firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                            lastDate: DateTime.now(),
+                          );
+                          if (picked != null) {
+                            setState(() => _selectedDate = picked);
+                          }
+                        },
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 24),
+                  if (sensoresKeys.isEmpty)
+                    const Center(child: Text('Sem medições para este dia.', style: TextStyle(color: Colors.grey)))
+                  else ...sensoresKeys.map((sensorKey) {
+                    final horariosMap = sensoresMap[sensorKey] ?? {};
+                    final horarios = horariosMap.keys.toList()..sort();
+                    final valores = horarios.map((h) => horariosMap[h] ?? 0.0).toList();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_nomeSensorCompleto(sensorKey), style: Theme.of(context).textTheme.titleMedium),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 240,
+                            child: valores.isEmpty
+                                ? const Center(child: Text('Sem dados para exibir.', style: TextStyle(color: Colors.grey)))
+                                : Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                    child: LineChart(
+                                      LineChartData(
+                                        gridData: FlGridData(
+                                          show: true,
+                                          drawVerticalLine: true,
+                                          horizontalInterval: ((valores.reduce((a, b) => a > b ? a : b) - valores.reduce((a, b) => a < b ? a : b)) / 4).clamp(1, 100),
+                                          verticalInterval: (valores.length / 4).ceilToDouble().clamp(1, 100),
+                                          getDrawingHorizontalLine: (value) => FlLine(
+                                            color: Colors.grey.withOpacity(0.15),
+                                            strokeWidth: 1,
+                                          ),
+                                          getDrawingVerticalLine: (value) => FlLine(
+                                            color: Colors.grey.withOpacity(0.10),
+                                            strokeWidth: 1,
+                                          ),
+                                        ),
+                                        titlesData: FlTitlesData(
+                                          leftTitles: AxisTitles(
+                                            sideTitles: SideTitles(
+                                              showTitles: true,
+                                              reservedSize: 36,
+                                              getTitlesWidget: (value, meta) {
+                                                // Exibe min, max e valor intermediário no eixo Y
+                                                final min = valores.reduce((a, b) => a < b ? a : b) - 2;
+                                                final max = valores.reduce((a, b) => a > b ? a : b) + 2;
+                                                final mid = ((min + max) / 2);
+                                                // Permite uma margem maior para garantir que o intermediário apareça
+                                                if ((value - min).abs() < 0.5 || (value - max).abs() < 0.5 || (value - mid).abs() < 0.5) {
+                                                  return Padding(
+                                                    padding: const EdgeInsets.only(right: 8.0),
+                                                    child: Text(value.toStringAsFixed(1), style: const TextStyle(fontSize: 10), textAlign: TextAlign.right),
+                                                  );
+                                                }
+                                                return const SizedBox.shrink();
+                                              },
+                                            ),
+                                          ),
+                                          bottomTitles: AxisTitles(
+                                            sideTitles: SideTitles(
+                                              showTitles: true,
+                                              reservedSize: 36,
+                                              getTitlesWidget: (value, meta) {
+                                                final idx = value.toInt();
+                                                // Exibe início, meio e fim no eixo X
+                                                if (horarios.length <= 1) return const SizedBox.shrink();
+                                                final meio = horarios.length ~/ 2;
+                                                if (idx == 0 || idx == meio || idx == horarios.length - 1) {
+                                                  final label = horarios[idx];
+                                                  return Padding(
+                                                    padding: const EdgeInsets.only(top: 8.0),
+                                                    child: Transform.rotate(
+                                                      angle: -0.7,
+                                                      child: Text(label, style: const TextStyle(fontSize: 10), textAlign: TextAlign.center),
+                                                    ),
+                                                  );
+                                                }
+                                                return const SizedBox.shrink();
+                                              },
+                                              interval: 1,
+                                            ),
+                                          ),
+                                          rightTitles: AxisTitles(
+                                            sideTitles: SideTitles(showTitles: false),
+                                          ),
+                                          topTitles: AxisTitles(
+                                            sideTitles: SideTitles(showTitles: false),
+                                          ),
+                                        ),
+                                        borderData: FlBorderData(
+                                          show: true,
+                                          border: const Border(
+                                            left: BorderSide(color: Colors.black12),
+                                            bottom: BorderSide(color: Colors.black12),
+                                            right: BorderSide(color: Colors.transparent),
+                                            top: BorderSide(color: Colors.transparent),
+                                          ),
+                                        ),
+                                        minY: valores.isEmpty ? 0 : (valores.reduce((a, b) => a < b ? a : b) - 2),
+                                        maxY: valores.isEmpty ? 10 : (valores.reduce((a, b) => a > b ? a : b) + 2),
+                                        lineBarsData: [
+                                          LineChartBarData(
+                                            spots: List.generate(
+                                              valores.length,
+                                              (i) => FlSpot(i.toDouble(), valores[i]),
+                                            ),
+                                            isCurved: true,
+                                            color: Colors.green.shade700,
+                                            barWidth: 2,
+                                            belowBarData: BarAreaData(show: true, color: Colors.green.withOpacity(0.10)),
+                                            dotData: FlDotData(
+                                              show: true,
+                                              getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                                                radius: 2.5,
+                                                color: Colors.green.shade800,
+                                                strokeWidth: 0,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
                 ],
               ),
             );
-          }).toList(),
-        ),
-      );
+          },
+        );
+      },
+    );
+  }
 
   Widget _buildAlertasTab() => SingleChildScrollView(
         padding: const EdgeInsets.all(16),
