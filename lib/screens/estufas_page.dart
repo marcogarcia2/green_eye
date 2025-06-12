@@ -32,28 +32,16 @@ class _EstufasPageState extends State<EstufasPage> {
     setState(() { _isLoading = true; });
     final loaded = await EstufaStorage.loadEstufas();
     if (loaded.isNotEmpty) {
-      // Para cada estufa, buscar apenas o último dia disponível e os valores mais recentes desse dia, em paralelo
+      // Para cada estufa, buscar apenas o valor mais recente do dia atual
+      final String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
       final List<Future<EstufaCard>> futurasEstufas = loaded.map((estufa) async {
-        final datas = await _firebaseService.getDatasDisponiveis(estufa.id);
-        String? ultimaData;
-        if (datas.isNotEmpty) {
-          ultimaData = datas.last;
-        }
-        Map<String, double> sensores = {
-          'Temperatura': 0.0,
-          'Umidade do Ar': 0.0,
-          'Umidade do Solo': 0.0,
-          'Luminosidade': 0.0,
+        final latest = await _firebaseService.getLatestSensorValues(estufa.id, today);
+        final sensores = {
+          'Temperatura': latest['temp'] ?? 0.0,
+          'Umidade do Ar': latest['hum'] ?? 0.0,
+          'Umidade do Solo': latest['moist'] ?? 0.0,
+          'Luminosidade': latest['lum'] ?? 0.0,
         };
-        if (ultimaData != null) {
-          final latest = await _firebaseService.getLatestSensorValues(estufa.id, ultimaData);
-          sensores = {
-            'Temperatura': latest['temp'] ?? 0.0,
-            'Umidade do Ar': latest['hum'] ?? 0.0,
-            'Umidade do Solo': latest['moist'] ?? 0.0,
-            'Luminosidade': latest['lum'] ?? 0.0,
-          };
-        }
         return estufa.copyWith(sensores: sensores);
       }).toList();
       final atualizadas = await Future.wait(futurasEstufas);
