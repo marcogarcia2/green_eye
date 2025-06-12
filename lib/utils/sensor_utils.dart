@@ -8,6 +8,8 @@ class SensorUtils {
       case 'Umidade do Ar':
       case 'Umidade do Solo':
         return '%';
+      case 'Luminosidade':
+        return ' lx';
       default:
         return '';
     }

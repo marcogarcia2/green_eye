@@ -198,7 +198,7 @@ class _EstufasPageState extends State<EstufasPage> {
             : estufas.isEmpty
                 ? Center(
                     child: Text(
-                      'Nenhuma estufa adicionada ainda.',
+                      'Nenhuma estufa adicionada.',
                       style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                       textAlign: TextAlign.center,
                     ),
@@ -491,7 +491,7 @@ class _EstufaDetalhesPageState extends State<EstufaDetalhesPage> with SingleTick
       case 'moist':
         return '%';
       case 'lum':
-        return '';
+        return ' lx';
       default:
         return '';
     }
