@@ -3,7 +3,6 @@
 #include <ArduinoJson.h>
 
 #include "sensors.h"
-#include "secret.h"
 #include "comm.h"
 
 #define NUM_SENSORS 4
@@ -24,16 +23,15 @@ void setup(){
   printData(data);
 
   // Conecta-se à internet para poder escrever os dados
-  connectWiFi();
-  configTime(-3 * 3600, 0, "pool.ntp.org"); // Configura NTP com fuso horário de Brasília (-3 horas)
-  if (!getLocalTime(&timeinfo)) {
-    Serial.println("Erro ao obter horário. Reiniciando o sistema...");
-    // restartSystem();
-    ESP.restart();
+  if (!connectWiFi()) {
+    restartSystem();
   }
 
-  // Sinaliza que se conectou à internet
-  blueLED(true);
+  configTime(-3 * 3600, 0, "pool.ntp.org"); // Configura NTP com fuso horário de Brasília (-3 horas)
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Erro ao obter horário.");
+    restartSystem();
+  }
 
   // Calculando o horário atual (para formar a chave do item no BD)
   int hh = timeinfo.tm_hour;
@@ -80,13 +78,13 @@ void setup(){
       case 1:
         strcat(path, "lum/");
         strcat(path, timeBuffer);
-        Firebase.setInt(path, data.luminosity);
+        Firebase.setFloat(path, data.luminosity);
         break;
 
       case 2:
         strcat(path, "moist/");
         strcat(path, timeBuffer);
-        Firebase.setInt(path, data.soilMoisture);
+        Firebase.setFloat(path, data.soilMoisture);
         break;
 
       case 3:
@@ -101,11 +99,12 @@ void setup(){
 
   }
 
+  Serial.println("Dados inseridos com sucesso.");
+
   // É necessário saber que horas são para calcular quanto ela deve dormir. 
     if (!getLocalTime(&timeinfo)) {
     Serial.println("Erro ao obter horário. Reiniciando o sistema...");
-    // restartSystem();
-    ESP.restart();
+    restartSystem();
   }
 
   // Hora do dia em segundos
@@ -129,8 +128,8 @@ void setup(){
 
 
 void loop(){
-//  // Usado para debug
-//  SensorData new_data = readSensors();
+ // Usado para debug
+//  new_data = readSensors();
 //  printData(new_data);
 //  delay(1000);
 }
