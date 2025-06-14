@@ -34,18 +34,19 @@ void initSensors() {
   dht.begin();
 }
 
-// Convert 
+// Função que converte a leitura de tensão em iluminância (lux) 
 double convertLuminosity(float lumADC){
-
 
   double voltage = (lumADC / 4095.0 ) * 3.3;
   if (voltage >= 3.29) voltage = 3.29;
   if (voltage <= 0.01) voltage = 0.01;  // Evitar zero ou negativo
 
-
+  // Calcula a resistência do LDR com base na tensão lida
   double resistance = (double)voltage*1000000.0 / (3.3 - voltage);
+  double a = -1.25;
+  double b = 6.5;
+  double lum = pow(10, b + a*log10(resistance));
 
-  double lum = pow(10, 6.5-1.25*log10(resistance));
   // debug
   // Serial.print("Valor ADC: ");
   // Serial.println(lumADC);
@@ -61,7 +62,7 @@ double convertLuminosity(float lumADC){
 
 
 // Função que lê os dados dos sensores
-SensorData readSensors(int samples = 15) {
+SensorData readSensors(int samples = 20) {
   
   // Uma para cada tipo de dado
   float totalHumidity = 0;
@@ -75,15 +76,15 @@ SensorData readSensors(int samples = 15) {
     totalTemp += dht.readTemperature();
     totalLDR += analogRead(LDR_PIN);
     totalSoil += analogRead(SOIL_PIN);
-    delay(500);  // Delay entre medições para evitar instabilidades
+    delay(1000);  // Delay entre medições para evitar instabilidades
     yield();
   }
 
   // Salva os dados coletados, tirando a média
   SensorData data;
   
-  data.humidity = totalHumidity / samples;
-  data.temperature = totalTemp / samples;
+  data.humidity = (float)totalHumidity / samples;
+  data.temperature = (float)totalTemp / samples;
   data.luminosity = convertLuminosity((float)totalLDR/samples);
   data.soilMoisture = totalSoil / samples;
 

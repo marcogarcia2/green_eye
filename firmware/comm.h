@@ -18,10 +18,10 @@ bool connectWiFi() {
   for (int attempts = 0; attempts < MAX_ATTEMPTS; attempts++){
 
     // Conexão em WiFi tradicional
-    // WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
     // Conexão no eduroam
-   WiFi.begin(WIFI_SSID, WPA2_AUTH_PEAP, EAP_IDENTITY, EAP_USERNAME, EAP_PASSWORD); // Para redes como eduroam
+  //  WiFi.begin(WIFI_SSID, WPA2_AUTH_PEAP, EAP_IDENTITY, EAP_USERNAME, EAP_PASSWORD); // Para redes como eduroam
     
     Serial.print("Conectando-se ao WiFi");
     
@@ -88,10 +88,11 @@ char* getDate() {
 }
 
 // Função que tenta se reconectar ao wifi, somente caso esse tenha caído.
-void reconnectWiFi(){
+bool reconnectWiFi(){
   if(WiFi.status() != WL_CONNECTED){
-    while(!connectWiFi());
+    return connectWiFi();
   }
+  return true;
 }
 
 #endif

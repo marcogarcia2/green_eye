@@ -6,7 +6,7 @@
 #include "comm.h"
 
 #define NUM_SENSORS 4
-#define SLEEP_INTERVAL 15 * 60 * 1000000 // 15 minutos escritos em microssegundos
+#define SLEEP_INTERVAL 900 // 15 minutos em segundos
 
 // Variável global que irá armazenar o tempo
 tm timeinfo;
@@ -17,13 +17,14 @@ void setup(){
   Serial.flush();
 
   // Coleta os dados dos sensores e armazena na struct "data"
-  Serial.println("\nESP32 ligada, vou coletar os dados...");
+  Serial.println("\nESP32 ligada!\nIniciando a coleta de dados...");
   initSensors();
   SensorData data = readSensors();
   printData(data);
 
   // Conecta-se à internet para poder escrever os dados
   if (!connectWiFi()) {
+    Serial.println("Erro ao obter conexão WiFi.");
     restartSystem();
   }
 
@@ -36,7 +37,7 @@ void setup(){
   // Calculando o horário atual (para formar a chave do item no BD)
   int hh = timeinfo.tm_hour;
   int mm = timeinfo.tm_min;
-  while (mm % 15 != 0) mm--;
+  while (mm % (SLEEP_INTERVAL / 60) != 0) mm--;
 
   // Forma a chave no formato HH:MM
   char timeBuffer[6];
@@ -49,15 +50,19 @@ void setup(){
   // Agora é preciso começar a construir os paths de cada dado
   char path[70];                  // path em que o item será guardado
   char base_path[70] = "/";       // path base, constante em cada iteração
-  strcat(base_path, ESTUFA_ID);
+  strcat(base_path, ID_ESTUFA);
   strcat(base_path, "/");
   strcat(base_path, dateBuffer);
   strcat(base_path, "/");
   // Serial.println(base_path);
 
-
+  // Garantindo conexão com a Internet antes de prosseguir
+  if(!reconnectWiFi()){
+    Serial.println("Erro ao obter conexão WiFi.");
+    restartSystem();
+  }
+  
   // Conectar com o banco de dados
-  reconnectWiFi();  // garante conexão com a internet
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   Serial.println("Inserindo os dados no BD...");
 
@@ -110,17 +115,11 @@ void setup(){
   // Hora do dia em segundos
   int current_time = timeinfo.tm_hour * 3600 + timeinfo.tm_min * 60 + timeinfo.tm_sec;
   
-  // Horário até qual deve dormir
-  int target_time = 0;
-  while (target_time < current_time){
-    target_time += 900; // (900 = 15*60) de 15 em 15 minutos
-  }
+  // Calcula o próximo horário de funcionamento
+  int target_time = ((current_time / SLEEP_INTERVAL) + 1) * SLEEP_INTERVAL;
 
   // Cálculo da quantidade de segundos que a ESP deve dormir
   int calculated_sleep_time = target_time - current_time;
-
-  // Desliga o LED
-  blueLED(false);
 
   // Faz a ESP dormir até o próximo horário de operação
   deepSleep(calculated_sleep_time);
@@ -128,8 +127,8 @@ void setup(){
 
 
 void loop(){
- // Usado para debug
-//  new_data = readSensors();
-//  printData(new_data);
-//  delay(1000);
+  // Usado para debug
+  //  new_data = readSensors();
+  //  printData(new_data);
+  //  delay(5000);
 }
