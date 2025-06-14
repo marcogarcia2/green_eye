@@ -54,22 +54,22 @@ O circuito físico responsável por coletar dados foi implementado utilizando ES
 <table align="center">
   <tr>
     <td align="center">
-        <img src="assets/photos/esp32.jpg" alt="ESP32" height="275"><br>
+        <img src="assets/photos/esp32.jpg" alt="ESP32" width="200"><br>
         Microcontrolador ESP32
       </a>
     </td>
     <td align="center">
-        <img src="assets/photos/ldr.png" alt="LDR" height="275"><br>
+        <img src="assets/photos/ldr.png" alt="LDR" width="200"><br>
         Módulo Sensor LDR
       </a>
     </td>
     <td align="center">
-        <img src="assets/photos/dht22.png" alt="DHT22" height="275"><br>
+        <img src="assets/photos/dht22.png" alt="DHT22" width="200"><br>
         Módulo Sensor DHT22
       </a>
     </td>
     <td align="center">
-        <img src="assets/photos/sensorcapa.png" alt="Sensor Capacitivo de Umidade do Solo" height="275"><br>
+        <img src="assets/photos/sensorcapa.png" alt="Sensor Capacitivo de Umidade do Solo" width="200"><br>
         Sensor Capacitivo v1.2 de Umidade do Solo
       </a>
     </td>
