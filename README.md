@@ -45,7 +45,6 @@ Alunos de Engenharia de Computação da USP São Carlos.
 O sistema `GreenEye` engloba um **circuito físico** que coleta dados da estufa em tempo real, um **banco de dados** em nuvem que recebe esses dados e um **aplicativo** multi-plataforma que pode ler e exibir esses dados. Vamos agora explicar cada parte do sistema mais a fundo.
 
 ### ⚡️ Circuito Físico
----
 O circuito físico responsável por coletar dados foi implementado utilizando ESP32, um microcontrolador amplamente utilizado em aplicações IoT (*Internet of Things*). Por possuir conexão WiFi nativa, o uso desse microcontolador permitiu uma rápida prototipação e simples implementação. Os sensores utilizados no sistema e a grandeza física a eles associada foram:
 - Módulo LDR (Luminosidade);
 - Módulo DHT22 (Temperatura e Umidade do Ar)
@@ -84,7 +83,6 @@ O código que define o comportamento do ESP32 foi compilado e carregado com a **
 Por motivos óbvios, este arquivo foi omitido do repositório GitHub.
 
 ### 🔥 Banco de Dados
----
 O Banco de Dados utilizado no projeto foi o **Realtime Database** do Google Firebase. Trata-se de um banco não-relacional em nuvem, uma solução gratuita da Google que possibilita uma prototipação eficiente. Cada circuito físico está associado a apenas uma estufa, e para cada uma delas, existe uma chave no banco de dados. Todos os dados referentes à essa estufa estarão guardados por essa chave, chamada de `ID_ESTUFA`, e o circuito físico associado só escreve nessa chave. 
 
 A estrutura básica em que o banco de dados foi modelado é representada abaixo. Os três pontos (...) indicam repetição seguindo o padrão acima. 
@@ -165,7 +163,6 @@ A estrutura básica em que o banco de dados foi modelado é representada abaixo.
 
 
 ### 📲 Aplicativo
----
 O aplicativo foi desenvolvido através do framework **Flutter**, empregando a linguagem de programação **Dart**. Essa escolha se deve à sua flexibilidade, em que um único código fonte é compilado e carregado para diferentes plataformas. Todo o código fonte referente ao aplicativo pode ser visto na pasta `/lib`, enquanto que as demais pastas são referentes ao ambiente de configuração do projeto e das plataformas destinadas. O foco principal do sistema é mobile, mas possivelmente pode ser expandido para outras plataformas no futuro.
 
 O aplicativo permite o monitoramento de diferentes estufas simultaneamente. A primeira figura mostra a tela de login do aplicativo. Na segunda figura, é mostrada a tela inicial, em que se exibe a última medição realizada de cada estufa, ou seja exibe o estado atual da estufa. Além disso, clicando em uma estufa, pode-se obter uma visualização mais detalhada dos seus dados. Pode-se visualizar seus dados por horário e por data, além de ver sua evolução através de gráficos, como mostra a terceira figura.
