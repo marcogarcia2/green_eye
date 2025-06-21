@@ -24,7 +24,7 @@ Para isso, projetamos e desenvolvemos um **sistema completo**, de forma que o pe
 Abaixo, pode-se ver uma representação de como o sistema funciona. Em cada estufa que deseja-se monitorar, deve ser instalado um circuito físico com acesso à Internet. Esse circuito coleta dados dos diferentes sensores em tempo real, e publica-os no banco de dados na nuvem. O aplicativo lê esses dados e os apresenta de maneira elegante, de forma que o usuário pode visualizar como estão as variáveis do ambiente de sua estufa.
 
 <p align="center">
-  <img src="assets/photos/diagrama.png" alt="Diagrama" width="650">
+  <img src="assets/photos/diagrama.png" alt="Diagrama" width="800">
 </p>
 <p align="center">
   <a style="font-size: 12px; text-decoration: none; color: inherit;">
@@ -181,7 +181,7 @@ O aplicativo permite o monitoramento de diferentes estufas simultaneamente. A pr
     </td>
     <td align="center">
         <img src="assets/photos/app_graph.png" alt="Gráficos" width="300"><br>
-        Tela de Visualização Gráfica dos Dados
+        Tela de Visualização Gráfica
       </a>
     </td>
   </tr>
