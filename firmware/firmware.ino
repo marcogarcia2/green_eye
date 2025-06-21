@@ -10,8 +10,8 @@
 // Variável global que irá armazenar o tempo
 tm timeinfo;
 
-// ===================================================================
-// --- FUNÇÃO PRIMORDIAL:
+
+// ===================---- FUNÇÃO PRIMORDIAL ----===================== //
 // Coleta os dados referentes à amostra atual.
 SensorData collectData(){
 
