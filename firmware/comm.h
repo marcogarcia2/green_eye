@@ -96,7 +96,7 @@ bool reconnectWiFi(){
   return true;
 }
 
-// Em comm.h
+// Função que insere os dados coletados no BD
 void insertData(SensorData sample){
 
   char base_path[70];
@@ -110,7 +110,7 @@ void insertData(SensorData sample){
 
   // Conectar com o banco de dados
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
-  Serial.println("Inserindo os dados no BD...");
+  Serial.print("Inserindo os dados no BD: [ ");
 
   // Loop de escrita no BD
   for (int i = 0; i < NUM_SENSORS; i++){
@@ -137,10 +137,11 @@ void insertData(SensorData sample){
         snprintf(path, sizeof(path), "%stemp/%s", base_path, sample.time);
         Firebase.setFloat(path, sample.temperature);
         break;
-    }
-  } 
+    } // fim switch
+    Serial.print("x ");
+  } // fim for
 
-  Serial.println("Dados inseridos com sucesso.");
+  Serial.println("]\nDados inseridos com sucesso."); Serial.flush();
 }
 
 #endif

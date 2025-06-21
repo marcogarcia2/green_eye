@@ -2,7 +2,6 @@
 #define SENSORS_H
 
 #include <DHT.h>
-#include <math.h>
 
 // Definição da quantidade de sensores
 #define NUM_SENSORS 4
@@ -12,6 +11,7 @@
 #define DHT_PIN     15
 #define DHTTYPE     DHT22
 #define SOIL_PIN    35
+#define BLUE        2
 
 // Setup do sensor DHT
 DHT dht(DHT_PIN, DHTTYPE);
@@ -29,17 +29,25 @@ struct SensorData {
 
 // Função que controla o LED Azul
 void blueLED(bool status){
-  pinMode(2, OUTPUT);
-  if (status) digitalWrite(2, HIGH);
-  else digitalWrite(2, LOW);
+  if (status) digitalWrite(BLUE, HIGH);
+  else digitalWrite(BLUE, LOW);
 }
 
 // Função que inicializa os sensores 
 void initSensors() {
+  pinMode(BLUE, OUTPUT);
   blueLED(true);
   dht.begin();
 }
 
+// Desligando os pinos antes de dormir
+void turnOffSensors(){
+  pinMode(LDR_PIN, INPUT);
+  pinMode(DHT_PIN, INPUT);
+  pinMode(SOIL_PIN, INPUT);
+  pinMode(BLUE, INPUT);  // Pino do LED azul
+  blueLED(false);
+}
 
 // Função que converte a leitura de tensão em iluminância (lux) 
 double convertLuminosity(float lumADC){
@@ -68,7 +76,7 @@ double convertLuminosity(float lumADC){
 }
 
 // Função que lê os dados dos sensores
-void readSensors(SensorData *sample, int samples = 5) {
+void readSensors(SensorData *sample, int num_samples = 5) {
   
   // Uma para cada tipo de dado
   float totalHumidity = 0;
@@ -76,8 +84,13 @@ void readSensors(SensorData *sample, int samples = 5) {
   int totalLDR = 0;
   int totalSoil = 0;
 
+  // Estabiliza os sensores (Dummy Read)
+  dht.readHumidity(); // Leitura fantasma
+  dht.readTemperature(); // Leitura fantasma
+  delay(500);
+
   // Realiza várias leituras dos dados
-  for (int i = 0; i < samples; i++) {
+  for (int i = 0; i < num_samples; i++) {
     totalHumidity += dht.readHumidity();
     totalTemp += dht.readTemperature();
     totalLDR += analogRead(LDR_PIN);
@@ -86,17 +99,17 @@ void readSensors(SensorData *sample, int samples = 5) {
     yield();
   }
   
-  sample->humidity = (float)totalHumidity / samples;
-  sample->temperature = (float)totalTemp / samples;
-  sample->luminosity = convertLuminosity((float)totalLDR/samples);
-  sample->soilMoisture = totalSoil / samples;
+  sample->humidity = (float)totalHumidity / num_samples;
+  sample->temperature = (float)totalTemp / num_samples;
+  sample->luminosity = convertLuminosity((float)totalLDR/num_samples);
+  sample->soilMoisture = totalSoil / num_samples;
 }
 
 // Função que exibe os dados coletados, um por linha
 void printData(SensorData sample){
-  Serial.println("=====================");
-  Serial.println("   DADOS COLETADOS   ");
-  Serial.println("=====================");
+  Serial.println("=========================");
+  Serial.println("     DADOS COLETADOS     ");
+  Serial.println("=========================");
 
   // Data e Hora da coleta
   Serial.print(sample.date);
@@ -123,22 +136,15 @@ void printData(SensorData sample){
   Serial.print(sample.soilMoisture);
   Serial.println("%");
 
-  Serial.println("=====================");
+  Serial.println("=========================");
 }
 
-// Desligando os pinos antes de dormir
-void turnOffSensors(){
-  pinMode(LDR_PIN, INPUT);
-  pinMode(DHT_PIN, INPUT);
-  pinMode(SOIL_PIN, INPUT);
-  blueLED(false);
-}
 
 // Função que reinicializa o circuito todo
 void restartSystem(){
-  turnOffSensors();
   Serial.println("Reiniciando o sistema...");
   Serial.flush();
+  turnOffSensors();
   ESP.restart();
 }
 

@@ -81,6 +81,7 @@ void setup(){
 
 
 void loop(){
+  yield();
   // Usado para debug
   //  new_data = readSensors();
   //  printData(new_data);
