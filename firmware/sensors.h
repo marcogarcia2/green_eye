@@ -4,6 +4,9 @@
 #include <DHT.h>
 #include <math.h>
 
+// Definição da quantidade de sensores
+#define NUM_SENSORS 4
+
 // Definição dos Pinos
 #define LDR_PIN     34
 #define DHT_PIN     15
@@ -13,13 +16,15 @@
 // Setup do sensor DHT
 DHT dht(DHT_PIN, DHTTYPE);
 
-// Estrutura que irá salvar os resultados
+// Estrutura que irá salvar os resultados dessa coleta
 struct SensorData {
   float temperature;
   float humidity;
   float luminosity;
   int soilMoisture;
-  
+  char date[11];
+  char time[6];
+
 };
 
 // Função que controla o LED Azul
@@ -34,6 +39,7 @@ void initSensors() {
   blueLED(true);
   dht.begin();
 }
+
 
 // Função que converte a leitura de tensão em iluminância (lux) 
 double convertLuminosity(float lumADC){
@@ -61,9 +67,8 @@ double convertLuminosity(float lumADC){
   return lum;
 }
 
-
 // Função que lê os dados dos sensores
-SensorData readSensors(int samples = 20) {
+void readSensors(SensorData *sample, int samples = 5) {
   
   // Uma para cada tipo de dado
   float totalHumidity = 0;
@@ -77,45 +82,45 @@ SensorData readSensors(int samples = 20) {
     totalTemp += dht.readTemperature();
     totalLDR += analogRead(LDR_PIN);
     totalSoil += analogRead(SOIL_PIN);
-    delay(1000);  // Delay entre medições para evitar instabilidades
+    delay(250);  // Delay entre medições para evitar instabilidades
     yield();
   }
-
-  // Salva os dados coletados, tirando a média
-  SensorData data;
   
-  data.humidity = (float)totalHumidity / samples;
-  data.temperature = (float)totalTemp / samples;
-  data.luminosity = convertLuminosity((float)totalLDR/samples);
-  data.soilMoisture = totalSoil / samples;
-
-  return data;
+  sample->humidity = (float)totalHumidity / samples;
+  sample->temperature = (float)totalTemp / samples;
+  sample->luminosity = convertLuminosity((float)totalLDR/samples);
+  sample->soilMoisture = totalSoil / samples;
 }
 
 // Função que exibe os dados coletados, um por linha
-void printData(SensorData data){
+void printData(SensorData sample){
   Serial.println("=====================");
   Serial.println("   DADOS COLETADOS   ");
   Serial.println("=====================");
+
+  // Data e Hora da coleta
+  Serial.print(sample.date);
+  Serial.print(" ");
+  Serial.println(sample.time);
   
   // Temperatura
   Serial.print("Temperatura: ");
-  Serial.print(data.temperature);
+  Serial.print(sample.temperature);
   Serial.println(" ºC");
 
   // Umidade do ar
   Serial.print("Umidade do ar: ");
-  Serial.print(data.humidity);
+  Serial.print(sample.humidity);
   Serial.println("%");
 
   // Luminosidade
   Serial.print("Luminosidade: ");
-  Serial.print(data.luminosity);
+  Serial.print(sample.luminosity);
   Serial.println(" lux");
 
   // Umidade do Solo
   Serial.print("Umidade do Solo: ");
-  Serial.print(data.soilMoisture);
+  Serial.print(sample.soilMoisture);
   Serial.println("%");
 
   Serial.println("=====================");

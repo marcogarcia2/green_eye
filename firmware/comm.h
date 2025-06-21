@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "secret.h"
+#include "sensors.h"
 
 #define MAX_ATTEMPTS 3
 
@@ -67,12 +68,12 @@ bool connectWiFi() {
 
 // Função que obtém a data de hoje no formato "YYYY-MM-DD"
 char* getDate() {
+
   struct tm timeinfo;
 
-  // Atualiza as informações de tempo local
   if (!getLocalTime(&timeinfo)) {
     Serial.println("Erro ao obter o horário local!");
-    return nullptr; // Retorna null em caso de erro
+    restartSystem();
   }
 
   // Aloca memória para armazenar a data
@@ -93,6 +94,53 @@ bool reconnectWiFi(){
     return connectWiFi();
   }
   return true;
+}
+
+// Em comm.h
+void insertData(SensorData sample){
+
+  char base_path[70];
+  snprintf(base_path, sizeof(base_path), "/%s/%s/", ID_ESTUFA, sample.date);
+
+  // Garantindo conexão com a Internet
+  if(!reconnectWiFi()){
+    Serial.println("Erro ao obter conexão WiFi.");
+    restartSystem();
+  }
+
+  // Conectar com o banco de dados
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Serial.println("Inserindo os dados no BD...");
+
+  // Loop de escrita no BD
+  for (int i = 0; i < NUM_SENSORS; i++){
+    char path[70]; // Variável que representa o path de escrita
+    strcpy(path, base_path); // Reinicia a cada iteração
+    
+    switch(i){
+      case 0: 
+        snprintf(path, sizeof(path), "%shum/%s", base_path, sample.time);
+        Firebase.setFloat(path, sample.humidity);
+        break;
+      
+      case 1:
+        snprintf(path, sizeof(path), "%slum/%s", base_path, sample.time);
+        Firebase.setFloat(path, sample.luminosity);
+        break;
+
+      case 2:
+        snprintf(path, sizeof(path), "%smoist/%s", base_path, sample.time);
+        Firebase.setFloat(path, sample.soilMoisture);
+        break;
+
+      case 3:
+        snprintf(path, sizeof(path), "%stemp/%s", base_path, sample.time);
+        Firebase.setFloat(path, sample.temperature);
+        break;
+    }
+  } 
+
+  Serial.println("Dados inseridos com sucesso.");
 }
 
 #endif
