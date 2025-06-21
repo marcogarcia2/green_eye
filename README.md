@@ -229,21 +229,43 @@ Pronto! O circuito físico já está funcionando corretamente.
 
 ### 2. Configurando o projeto Flutter
 Como pré-requisito, é necessário ter o Flutter instalado no sistema. 
-1. Navegue até a a pasta raiz do projeto e rode o comando para instalar as dependências:
+
+1. Comece criando um arquivo `.env` na pasta raiz do repositório, em que as informações sensíveis de chaves que conectam o Firebase com o aplicativo serão guardadas.
+```bash
+touch .env
+```
+2. Escreva neste arquivo as chaves api e demais informações necessárias.Esses dados podem ser encontrados no console do projeto no Firebase.
+```conf
+# Firebase
+PROJECT_ID=project_id
+BUNDLE_ID=com.example.project
+STORAGE_BUCKET=storage_bucket
+SENDER_ID=sender_id
+
+# iOS
+IOS_API_KEY=ios_api_key
+IOS_APP_ID=ios_app_id
+
+# Android
+ANDROID_API_KEY=android_api_key
+ANDROID_APP_ID=android_app_id
+```
+3. Na pasta raiz do projeto, rode o comando para instalar as dependências:
 ```bash
 flutter pub get
 ```
-2. Conecte algum dispositivo (celular android) ou abra um emulador
-3. Rode o aplicativo com:
+4. Conecte algum dispositivo (celular android) ou abra um emulador
+5. Rode o aplicativo com:
 ```bash
 flutter run
 ```
-4. Se quiser gerar o APK para instalação em dispositivos Android, execute:
+6. Se quiser gerar o APK para instalação em dispositivos Android, execute:
 ```bash
 flutter build apk --release
 ```
-5. O APK será gerado após alguns minutos e estará localizado em `/build/app/outputs/flutter-apk/app-release.apk`. 
+7. O APK será gerado após alguns minutos e estará localizado em `/build/app/outputs/flutter-apk/app-release.apk`. 
 
+> **OBS:** Para rodar no iOS, é necessário ter um MacBook com Xcode instalado.
 
 
 ## 🔮 Melhorias futuras
