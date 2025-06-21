@@ -196,7 +196,7 @@ cd greeneye
 
 ### 1. Montando e configurando o circuito físico
 Para a **montagem** do circuito físico, é preciso ter os componentes descritos na seção acima.
-1. Ligue os Módulos LDR e DHT22 em 3.3V e GND, e ligue o Sensor Capacitivo de Umidade de Solo no 5V e GND. Ambas as alimentações são pinos de saída do próprio ESP32. 
+1. Ligue os Módulos LDR e DHT22 em 3.3V e GND, e ligue o Sensor Capacitivo de Umidade de Solo em 5V e GND. Ambas as alimentações são pinos de saída do próprio ESP32. 
 2. Ligue a saída digital do módulo DHT22 em qualquer pino de leitura digital do ESP32. 
 3. Ligue a saída analógica do módulo LDR em qualquer pino de leitura analógica do ESP32.
 4. Ligue a saída analógica do Sensor Capacitivo de Umidade do Solo em qualquer pino de leitura analógica do ESP32.
@@ -224,6 +224,11 @@ touch secret.h
 #define FIREBASE_AUTH "senha_do_banco_de_dados"
 ```
 7. Salve e clique em **Upload** no canto superior esquerdo.
+
+8. Retorne à pasta raiz do projeto com:
+```bash
+cd ..
+```
 
 Pronto! O circuito físico já está funcionando corretamente.
 
