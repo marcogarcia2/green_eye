@@ -19,6 +19,7 @@ struct SensorData {
   float humidity;
   float luminosity;
   int soilMoisture;
+  
 };
 
 // Função que controla o LED Azul
@@ -117,8 +118,7 @@ void printData(SensorData data){
   Serial.print(data.soilMoisture);
   Serial.println("%");
 
-  Serial.println();
-  Serial.flush();
+  Serial.println("=====================");
 }
 
 // Desligando os pinos antes de dormir

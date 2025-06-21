@@ -14,9 +14,8 @@ tm timeinfo;
 void setup(){
 
   Serial.begin(9600);
-  Serial.flush();
 
-  // Coleta os dados dos sensores e armazena na struct "data"
+  // Coleta os dados dos sensores e armazena na struct "data" de maneira offline
   Serial.println("\nESP32 ligada!\nIniciando a coleta de dados...");
   initSensors();
   SensorData data = readSensors();
@@ -42,10 +41,14 @@ void setup(){
   // Forma a chave no formato HH:MM
   char timeBuffer[6];
   snprintf(timeBuffer, 6, "%02d:%02d", hh, mm);
+  Serial.print("Horário atual: ");
+  Serial.println(timeBuffer);
 
   // Descobrir que dia é hoje
   char dateBuffer[11];
   strcpy(dateBuffer, getDate());
+  Serial.print("Data atual: ");
+  Serial.println(dateBuffer);
 
   // Agora é preciso começar a construir os paths de cada dado
   char path[70];                  // path em que o item será guardado
