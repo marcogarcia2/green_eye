@@ -38,7 +38,7 @@ Enquanto um circuito mede e envia dados de apenas uma estufa (1:1), no aplicativ
 Alunos de Engenharia de Computação da USP São Carlos. 
 | [<img loading="lazy" src="https://avatars.githubusercontent.com/u/106342806?v=4" width=115><br><sub>Leonardo Rissetto</sub>](https://github.com/LeoRissetto) | [<img loading="lazy" src="https://avatars.githubusercontent.com/u/101420277?v=4" width=115><br><sub>Lucas Romero</sub>](https://github.com/lucaslimaromero) | [<img loading="lazy" src="https://avatars.githubusercontent.com/u/130308566?v=4" width=115><br><sub>Luciano Lopes</sub>](https://github.com/lopesluciano) | [<img loading="lazy" src="https://avatars.githubusercontent.com/u/106283522?v=4" width=115><br><sub>Manoel Thomaz</sub>](https://github.com/thneto1103) | [<img loading="lazy" src="https://avatars.githubusercontent.com/u/105023846?v=4" width=115><br><sub>Marco Garcia</sub>](https://github.com/marcogarcia2) | [<img loading="lazy" src="https://avatars.githubusercontent.com/u/106834796?v=4" width=115><br><sub>Thiago Gonçalves</sub>](https://github.com/thiagokg314) |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-| Fullstack Developer | UI/UX Designer | Electronics Engineer | Weed Supplier | PO & Scrum Master | Commercial Director |
+| Fullstack Developer | UI/UX Designer | Electronics Engineer | Domain Specialist | PO & Scrum Master | Commercial Director |
  
 
 ## 🖥️ Especificações do Sistema
