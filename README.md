@@ -2,7 +2,7 @@
 
 Sistema multi-plataforma de monitoramento inteligente de estufas, desenvolvido na disciplina SSC0620 - Engenharia de Software do ICMC - USP, ministrada pela Profa. Dra. Simone do Rocio Senger de Souza, em parceria com a ESALQ - USP. 
 
-Link do vídeo de apresentação: [clique aqui](https://drive.google.com/file/d/1qwKparfPKlJ2Xzuqjb6ydJlpLD4FTQzG/view?usp=drive_link)
+Link do vídeo de apresentação: [clique aqui](https://youtu.be/9vkcmdCUPYM)
 
 > Versão atual: 0.9.1 (Beta)
 
